@@ -138,8 +138,8 @@ class BiopythonTranslator:
         properties.update(other_properties)
 
         return GraphicFeature(
-            start=feature.location.start,
-            end=feature.location.end,
+            start=feature.location.parts[0].start,
+            end=feature.location.parts[-1].end,
             strand=feature.location.strand,
             **properties
         )
