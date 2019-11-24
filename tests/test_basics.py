@@ -178,3 +178,52 @@ def test_sequence_and_translation_plotting():
     ax, _ = record.plot(figure_width=5)
     record.plot_sequence(ax)
     record.plot_translation(ax, (8, 23), fontdict={'weight': 'bold'})
+def test_translate_feature():
+    from dna_features_viewer import BiopythonTranslator
+    from Bio.SeqFeature import (SeqFeature, ExactPosition, FeatureLocation)
+
+    feat_start = 2
+    feat_end = 8
+
+    loc = FeatureLocation(
+            ExactPosition(feat_start),
+            ExactPosition(feat_end),
+    )
+    feat = SeqFeature(
+            location = loc,
+            type = 'gene',
+    )
+
+    g_feature = BiopythonTranslator().translate_feature(feat)
+
+    assert (g_feature.start, g_feature.end) == (feat_start, feat_end)
+def test_translate_compoundfeature():
+    from dna_features_viewer import BiopythonTranslator
+    from Bio.SeqFeature import (SeqFeature, ExactPosition, FeatureLocation,
+            CompoundLocation)
+
+    feat_start = 14
+    feat_end = 6
+    seq_len = 20
+
+    loc_spanning_origin = CompoundLocation(
+            parts = [
+                    FeatureLocation(
+                            ExactPosition(feat_start),
+                            ExactPosition(seq_len),
+                    ),
+                    FeatureLocation(
+                            ExactPosition(0),
+                            ExactPosition(feat_end),
+                    ),
+            ],
+            operator = 'order',
+    )
+    feat_spanning_origin = SeqFeature(
+            location = loc_spanning_origin,
+            type = 'gene',
+    )
+
+    g_feature = BiopythonTranslator().translate_feature(feat_spanning_origin)
+
+    assert (g_feature.start, g_feature.end) == (feat_start, feat_end)
