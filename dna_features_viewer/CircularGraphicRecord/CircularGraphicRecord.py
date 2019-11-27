@@ -116,9 +116,8 @@ class CircularGraphicRecord(GraphicRecord):
         """Plot an ArrowWedge representing the feature at the giben height
         level.
         """
-        a_start = self.position_to_angle(feature.start)
-        a_end = self.position_to_angle(feature.end)
-        a_start, a_end = sorted([a_start, a_end])
+        a_end = self.position_to_angle(feature.start)
+        a_start = self.position_to_angle(feature.end)
         r = self.radius + level * self.feature_level_height
         patch = ArrowWedge(
             (0, -self.radius),
@@ -133,12 +132,13 @@ class CircularGraphicRecord(GraphicRecord):
             zorder=1,
         )
         ax.add_patch(patch)
-
     def position_to_angle(self, position):
         """Convert a sequence position into an angle in the figure."""
-        a = 360.0 * (position - self.top_position) / self.sequence_length
-        return 90 - a
-
+        #a = 360.0 * (position - self.top_position) / self.sequence_length
+        # MatPlotLib Wedge positive sweep from theta1 to theta2 is anticlockwise but we want clockwise
+        a = 360.0 * (self.sequence_length - position - self.top_position) / self.sequence_length
+        # MatPlotLib Wedge theta 0 is 3 o'clock but we want 12 o'clock for a circular molecule plot
+        return a + 90
     def coordinates_in_plot(self, position, level):
         """Convert a sequence position and height level to (x, y) coordinates.
         """

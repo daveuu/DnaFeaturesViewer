@@ -209,7 +209,14 @@ class MatplotlibPlottableMixin:
         `start` and `end` while the y-coordinates are determined by the `level`
         """
         bg_color = change_luminosity(feature.color, luminosity=0.95)
-        x, y = self.coordinates_in_plot(feature.x_center, level)
+        if hasattr(self, 'sequence_length'):
+            # Its a CircularGraphicRecord so sequence length is required for
+            # calculating x_center.
+            x_center = feature.x_center_circular(self.sequence_length)
+        else:
+            x_center = feature.x_center
+
+        x, y = self.coordinates_in_plot(x_center, level)
         label = feature.label
         if not inline:
             label = self._format_label(
@@ -328,7 +335,19 @@ class MatplotlibPlottableMixin:
         x_lim
           Horizontal axis limits to be set at the end.
         """
-        features_levels = compute_features_levels(self.features)
+        if hasattr(self, 'sequence_length'):
+            # Its a CircularGraphicRecord so sequence length is required for
+            # calculating lengths of features that span the origin and their
+            # x_center mid-point.
+            plot_circular = True
+        else:
+            plot_circular = False
+        
+        if plot_circular:
+            features_levels = compute_features_levels(self.features,
+                    self.sequence_length)
+        else:
+            features_levels = compute_features_levels(self.features)
         for f in features_levels:
             features_levels[f] += level_offset
         max_level = (
@@ -376,7 +395,11 @@ class MatplotlibPlottableMixin:
                         nlines=nlines,
                     )
                 )
-        annotations_levels = compute_features_levels(overflowing_annotations)
+        if plot_circular:
+            annotations_levels = compute_features_levels(overflowing_annotations,
+                    self.sequence_length)
+        else:
+            annotations_levels = compute_features_levels(overflowing_annotations)
         max_annotations_level = max([0] + list(annotations_levels.values()))
         annotation_height = self.determine_annotation_height(max_level)
         labels_data = {}
@@ -387,8 +410,14 @@ class MatplotlibPlottableMixin:
                 level
             ) * annotation_height
             text.set_position((x, new_y))
+            if plot_circular:
+                x_center = feature.data["feature"].\
+                        x_center_circular(self.sequence_length)
+            else:
+                x_center = feature.data["feature"].x_center
+
             fx, fy = self.coordinates_in_plot(
-                feature.data["feature"].x_center, feature.data["feature_level"]
+                x_center, feature.data["feature_level"]
             )
             ax.plot([x, fx], [new_y, fy], c="k", lw=0.5, zorder=1)
             labels_data[feature.data["feature"]] = dict(

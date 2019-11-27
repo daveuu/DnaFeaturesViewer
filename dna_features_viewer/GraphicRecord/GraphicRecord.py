@@ -168,7 +168,7 @@ class GraphicRecord(MatplotlibPlottableMixin, BokehPlottableMixin):
             label = label[: max_label_length - 1] + "…"
         label = "\n".join(textwrap.wrap(label, max_line_length))
         return label
-    
+
     def compute_padding(self, ax):
         ax_width = ax.get_window_extent(ax.figure.canvas.get_renderer()).width
         xmin, xmax = ax.get_xlim()

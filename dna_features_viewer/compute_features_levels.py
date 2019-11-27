@@ -26,7 +26,7 @@ class Graph:
             self.neighbors[n2].append(n1)
 
 
-def compute_features_levels(features):
+def compute_features_levels(features, circular_seq_length = None):
     """Compute the vertical levels on which the features should be displayed
     in order to avoid collisions.
 
@@ -40,11 +40,18 @@ def compute_features_levels(features):
     - A node receives the lowest level (starting at 0) that is not already
       the level of one of its neighbors.
     """
-    edges = [
-        (f1, f2)
-        for f1, f2 in itertools.combinations(features, 2)
-        if f1.overlaps_with(f2)
-    ]
+    if circular_seq_length is not None:
+        edges = [
+            (f1, f2)
+            for f1, f2 in itertools.combinations(features, 2)
+            if f1.overlaps_with(f2, circular_seq_length)
+        ]
+    else:
+        edges = [
+            (f1, f2)
+            for f1, f2 in itertools.combinations(features, 2)
+            if f1.overlaps_with(f2)
+        ]
     graph = Graph(features, edges)
     levels = {n: None for n in graph.nodes}
 
@@ -67,8 +74,14 @@ def compute_features_levels(features):
                 if level == base_level:
                     return True
         return False
-
-    for node in sorted(graph.nodes, key=lambda f: -f.length):
+    
+    if circular_seq_length is not None:
+        nodes = sorted(graph.nodes, 
+                key=lambda f: -f.length_circular(circular_seq_length))
+    else:
+        nodes = sorted(graph.nodes, key=lambda f: -f.length)
+    
+    for node in nodes:
         base_level = 0
         while collision(base_level, node):
             base_level += 1

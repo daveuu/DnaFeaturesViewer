@@ -101,23 +101,62 @@ class GraphicFeature:
             copy.open_right = True
         return copy
 
-    def overlaps_with(self, other):
+    def overlaps_with(self, other, circular_seq_length = None):
         """Return True iff the feature's location overlaps with feature `other`
         """
-        loc1, loc2 = (self.start, self.end), (other.start, other.end)
-        loc1, loc2 = sorted(loc1), sorted(loc2)
-        loc1, loc2 = sorted([loc1, loc2], key=lambda loc: loc[0])
-        return loc1[1] > loc2[0]
+        if (self.start > self.end or other.start > other.end) and \
+                circular_seq_length is None:
+            raise ValueError(
+                    'need `circular_seq_length` if feature start is '
+                    'greater than end i.e., spanning origin'
+            )
+        
+        self_ranges = []
+        if self.start < self.end:
+            self_ranges += [(self.start, self.end)]
+        else:
+            self_ranges += [(self.start, circular_seq_length)]
+            self_ranges += [(0, self.end)]
+        other_ranges = []
+        if other.start < other.end:
+            other_ranges += [(other.start, other.end)]
+        else:
+            other_ranges += [(other.start, circular_seq_length)]
+            other_ranges += [(0, other.end)]
+        
+        overlaps = False
+        for self_range in self_ranges:
+            for other_range in other_ranges:
+                loc1, loc2 = sorted([self_range, other_range])
+                if loc1[1] > loc2[0]:
+                    overlaps = True
+        
+        return overlaps
+
 
     @property
     def length(self):
         """Return the length of the feature (end-start)"""
         return abs(self.end - self.start)
-
+    def length_circular(self, sequence_length):
+        """Return the length of the feature allowing for crossing the origin"""
+        if self.start > self.end:
+            return sequence_length - self.start + self.end
+        else:
+            return self.end - self.start
     @property
     def x_center(self):
         """Return the x-center of the feature, (start+end)/2"""
         return 0.5 * (self.start + self.end - 1)
+
+    def x_center_circular(self, sequence_length):
+        """Return the x-center of the feature allowing for crossing origin"""
+        feature_length = self.length_circular(sequence_length)
+        mid_point = feature_length * 0.5 + self.start
+        if mid_point <= sequence_length:
+            return mid_point
+        else:
+            return mid_point - sequence_length
 
     @staticmethod
     def from_biopython_feature(feature, **props):
